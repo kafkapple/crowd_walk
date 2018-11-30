@@ -87,6 +87,7 @@ isContinue = True
 isArea = True
 isLandmark = True
 isGraph = True
+flag_curr = True
 
 camera_width = 0
 camera_height = 0
@@ -147,7 +148,7 @@ for i_ax in axes_list:
 
 
 axes_list[0].set_xlim(auto=True)
-axes_list[0].set_ylim((-5,150))
+axes_list[0].set_ylim((-5,120))
 
 ## bar graph
 axes_list[1].set_ylim((0,100))
@@ -290,11 +291,12 @@ def detect_area_driver(frame, face_coordinates, color_ch=1):
             
 def refreshScreen(frame):
     global face_68
-    if isArea:
-        check_detect_area(frame)
+#    if isArea:
+#        check_detect_area(frame) # 하얀 선으로 detect area 표시
+        
     if isLandmark:
         draw_landmark(frame, rect)
-    drawFace(frame, bounding_box)
+    #drawFace(frame, bounding_box)
     cv2.imshow(windowName, frame) 
     
 ## Save    
@@ -356,7 +358,7 @@ def setDefaultCameraSetting():
     cv2.setWindowProperty(winname=windowName, prop_id=cv2.WINDOW_FULLSCREEN, prop_value=cv2.WINDOW_FULLSCREEN)
 
 def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emotion class models
-    global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model
+    global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr
     start_t = time.time()
     labels = ['Angry','Happy','Neutral']
     color_list = [RED_COLOR, dahong, WHITE_COLOR]
@@ -412,15 +414,27 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             ## live plot
             n_emotion = len(emotion_hist)
             n_bin = 2
+            n_data = 10
             # print(str(n_emotion)+'\n')
 
             if n_emotion % 2 == 0:
-                emotion_data = np.array(emotion_hist)
-                #print(np.shape(emotion_data))
+                if n_data < n_emotion and flag_curr:
+                    print('cutting')
+                    emotion_hist_cur = emotion_hist[-1-n_data:-1]
+                    n_emotion = len(emotion_hist_cur)
+                else:
+                    emotion_hist_cur = emotion_hist
+                    n_emotion = len(emotion_hist_cur)
+                    
+                
+                emotion_data = np.array(emotion_hist_cur)
+                print(np.shape(emotion_data))
                 xdata = np.array(range(n_emotion))
 
                 # 3종류 감정 각각 누적 데이터 plot
                 print('emotion:',np.mean(emotion_data, axis=0))
+                
+                    
                 for i in range(3):
                     list_line[i].set_data(xdata, emotion_data[:,i] * 100) ## temp
                     
@@ -428,8 +442,8 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 print(n_emotion)
 
                         
-                val_1+=np.mean(emotion_data[-1-n_bin:-1,1], axis=0)*5
-                val_2+=np.mean(emotion_data[-1-n_bin:-1:,2], axis=0)*5
+                val_1+=np.mean(emotion_data[-1-n_bin:-1,1], axis=0)
+                val_2+=np.mean(emotion_data[-1-n_bin:-1:,2], axis=0)
                 print(val_1, val_2)
                 #mean_val  = np.mean(emotion_data)
                 #emotion_hist[i]
@@ -482,6 +496,10 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             reduce_detect_area()
         elif key == ord('q'): # exit
             break
+        elif key == ord('c'):
+            flag_curr = not flag_curr
+            print('plot mode change')
+            
         elif key%256 == 32:  # jj_add / press space bar to save cropped gray image
             try:
                 user_img_capture() #img_counter)
