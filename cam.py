@@ -99,7 +99,7 @@ face_68=np.zeros((68,2))
 
 plt.rcParams['figure.constrained_layout.use'] = True
 ## Main
-fig_size= (10,7)
+fig_size= (12,7)
 
 #fig_total = plt.figure(figsize=fig_size)
 fig_total, axes_list = plt.subplots(1,2)
@@ -111,7 +111,7 @@ axes_list[0].set(ylabel='%', xlabel='Time')
 #ax3.legend(loc='upper right')
 #axes_list = [ax1,ax3]
 
-label_test = ['hate', 'every', 'start']
+label_test = ['A', 'H', 'N']
 line1 = []
 line2 = []
 line3 = []
@@ -147,7 +147,7 @@ for i_ax in axes_list:
 
 
 axes_list[0].set_xlim(auto=True)
-axes_list[0].set_ylim((-30,150))
+axes_list[0].set_ylim((-5,150))
 
 ## bar graph
 axes_list[1].set_ylim((0,100))
@@ -411,7 +411,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
 
             ## live plot
             n_emotion = len(emotion_hist)
-           
+            n_bin = 2
             # print(str(n_emotion)+'\n')
 
             if n_emotion % 2 == 0:
@@ -428,8 +428,8 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 print(n_emotion)
 
                         
-                val_1+=np.mean(emotion_data[:,1], axis=0)*5
-                val_2+=np.mean(emotion_data[:,2], axis=0)*5
+                val_1+=np.mean(emotion_data[-1-n_bin:-1,1], axis=0)*5
+                val_2+=np.mean(emotion_data[-1-n_bin:-1:,2], axis=0)*5
                 print(val_1, val_2)
                 #mean_val  = np.mean(emotion_data)
                 #emotion_hist[i]
