@@ -41,7 +41,7 @@ from keras.models import load_model
 from keras.utils.generic_utils import CustomObjectScope
 
 import matplotlib.patches as mpatches
-
+plt.style.use('dark_background')
 model_weight_path = r'F:\github\fer\model\models\ak8.h5'
 emotion = ['Angry', 'Happy', 'Neutral']
 model = load_model(model_weight_path)
@@ -56,15 +56,23 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(landmarks)
 
 FACE_CASCADE_PATH = "haarcascade_frontalface_default.xml"
+
+from colormap import hex2rgb
+
+
 RED_COLOR = (0, 0, 255)
 WHITE_COLOR = (255, 255, 255)
 pink = (255,139,148)
 green = (255, 170, 165) # 하늘색? 에메랄드 그린
 dahong = (254,74,173)#(241, 153, 160)
-
+pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94']
+fig_width=400
+plot_fig = np.zeros((480,fig_width*2,3))
 
 cur_color = pink#dahong#RED_COLOR#(255, 170, 165) # 에메랄드 그린
-color = dahong #pink
+color = hex2rgb(pastel_rainbow[0])
+
+#color = dahong #pink
 
 cur_font = cv2.FONT_HERSHEY_DUPLEX
 
@@ -76,6 +84,7 @@ min_x, max_x, min_y, max_y = 0, 0, 0, 0
 #(lStart, lEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["left_eye"]
 #(rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
 
+emotion_hist = []
 labels = ['Angry','Happy','Neutral']
 
 #sys.path.append("../")
@@ -100,14 +109,15 @@ face_68=np.zeros((68,2))
 
 plt.rcParams['figure.constrained_layout.use'] = True
 ## Main
-fig_size= (12,7)
+fig_size= (10,6)
 
 #fig_total = plt.figure(figsize=fig_size)
+#fig_total, axes_list = plt.subplots(1,2)
 fig_total, axes_list = plt.subplots(1,2)
 #ax1 = plt.subplot(1,2,1)#figsize=fig_size)#figsize=(10,4))
 #ax3 = plt.subplot(1,2,2)#figsize=fig_size)#figsize=(10,4))
 #ax3 = plt.axes(xlim=(0, 100), ylim=(-10, 150))
-pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94']
+
 axes_list[0].set(ylabel='%', xlabel='Time')
 #ax3.legend(loc='upper right')
 #axes_list = [ax1,ax3]
@@ -119,7 +129,7 @@ line3 = []
 list_line = [line1, line2, line3]
     
 for i in range(3):
-        list_line[i], = axes_list[0].plot([], [], '-', linewidth=2, label=labels[i],  color=pastel_rainbow[i])
+        list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1, label=labels[i])#,  color=pastel_rainbow[i])
 
 
 def legend_patch(current_palette, labels):
@@ -131,7 +141,7 @@ def legend_patch(current_palette, labels):
 
 
 patches = legend_patch(pastel_rainbow, label_test) 
-axes_list[0].legend(handles = patches, loc='best', edgecolor =None, fontsize=13, bbox_to_anchor=(0.8,0.7)) # upper right
+axes_list[1].legend(handles = patches, loc='best', edgecolor =None, fontsize=13, bbox_to_anchor=(0.8,0.7)) # upper right
 
 
 
@@ -241,7 +251,8 @@ def check_detect_area(frame):
 def draw_landmark(frame, rect):
     global face_68
     if rect is not None:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray =frame
         shape = predictor(gray, rect)
         shape = face_utils.shape_to_np(shape)
         
@@ -281,13 +292,31 @@ def detect_area_driver(frame, face_coordinates, color_ch=1):
             input_img = np.stack((input_img,)*color_ch, -1 )
             
 
-        if not mode_capture:
-            cv2.putText(frame, "Press S to start capture", (int(camera_width * 0.2), int(camera_height * 0.18)),
-                            cur_font, 1.1, dahong, 2)            
-    else:
-        cv2.putText(frame, "Please look at the camera :)", (int(camera_width * 0.1), int(camera_height * 0.5)),
-                            cur_font, 1.1, green, 2)
-            
+#        if not mode_capture:
+#            cv2.putText(frame, "Press S to start capture", (int(camera_width * 0.2), int(camera_height * 0.18)),
+#                            cur_font, 1.1, dahong, 2)            
+#    else:
+#        cv2.putText(frame, "Please look at the camera :)", (int(camera_width * 0.1), int(camera_height * 0.5)),
+#                            cur_font, 1.1, green, 2)
+#            
+                
+def fig2data ( fig ):
+    """
+    @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
+    @param fig a matplotlib figure
+    @return a numpy 3D array of RGBA values
+    """
+    # draw the renderer
+    fig.canvas.draw ( )
+    buf = np.array(fig.canvas.renderer._renderer)
+    # Get the RGBA buffer from the figure
+#    w,h = fig.canvas.get_width_height()
+#    buf = np.fromstring ( fig.canvas.tostring_rgb(), dtype=np.uint8 )
+#    buf.shape = ( w, h,3 )
+# 
+    # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+    #buf = np.roll ( buf, 3, axis = 2 )
+    return buf
             
 def refreshScreen(frame):
     global face_68
@@ -298,6 +327,7 @@ def refreshScreen(frame):
         draw_landmark(frame, rect)
     #drawFace(frame, bounding_box)
     cv2.imshow(windowName, frame) 
+    #print(np.shape(np.array(frame)))
     
 ## Save    
 def user_img_capture():
@@ -340,6 +370,15 @@ def user_img_capture():
     
 #IPython.display.display(IPython.display.Image(data=f.getvalue()))
 
+def change_width(ax, new_value):
+    for patch in ax.patches :
+        current_width = patch.get_width()
+        diff = current_width - new_value
+        # change bar width
+        patch.set_width(new_value)
+        # recenter
+        patch.set_x(patch.get_x() + diff * .5)
+
 def getCameraStreaming():
     capture = cv2.VideoCapture(0)
     global camera_width, camera_height
@@ -358,13 +397,13 @@ def setDefaultCameraSetting():
     cv2.setWindowProperty(winname=windowName, prop_id=cv2.WINDOW_FULLSCREEN, prop_value=cv2.WINDOW_FULLSCREEN)
 
 def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emotion class models
-    global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr
+    global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr, emotion_hist, plot_fig
     start_t = time.time()
     labels = ['Angry','Happy','Neutral']
     color_list = [RED_COLOR, dahong, WHITE_COLOR]
     n_label = len(labels)
     n_pic = 10
-    emotion_hist = []
+    
     ### plot
     
   
@@ -380,7 +419,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
     #list_plot[0], = axes_list[0].plot([], [], 'o-', linewidth=3, label=labels[0])
     n_bins=2
     ax_bar = axes_list[1].bar(range(n_bins), np.ones(n_bins)*10, color=pastel_rainbow[0:4:2])#,edgecolor='black')
-    
+    change_width(ax_bar, 0.7)
     #ax3.bar(np.arange(len(data)),data,)
     val_1 = 0
     val_2 = 0
@@ -399,9 +438,9 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
         plt.ion()               
         #result = np.mean(face_68) # 68x2
         #qprint(result)
-        cv2.putText(frame, "Press Q to quit",
-                            (int(camera_width * 0.7), int(camera_height * 0.05)),
-                            cur_font, 0.7, green, 1)
+#        cv2.putText(frame, "Press Q to quit",
+#                            (int(camera_width * 0.7), int(camera_height * 0.05)),
+#                            cur_font, 0.7, green, 1)
             
         if input_img is not None:
             result = model.predict(input_img)[0]
@@ -413,54 +452,68 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
 
             ## live plot
             n_emotion = len(emotion_hist)
-            n_bin = 2
-            n_data = 10
+            n_bin = 10
+            n_data = 20
             # print(str(n_emotion)+'\n')
 
-            if n_emotion % 2 == 0:
+            if n_emotion % 1 == 0:
                 if n_data < n_emotion and flag_curr:
-                    print('cutting')
-                    emotion_hist_cur = emotion_hist[-1-n_data:-1]
+                    #print('cutting')
+                    emotion_hist_cur = emotion_hist[-1-n_data:]
                     n_emotion = len(emotion_hist_cur)
+                    #print(n_emotion, emotion_hist_cur[0])
                 else:
                     emotion_hist_cur = emotion_hist
                     n_emotion = len(emotion_hist_cur)
                     
-                
+                cur_bin = min(n_bin, n_emotion) 
                 emotion_data = np.array(emotion_hist_cur)
-                print(np.shape(emotion_data))
+            
                 xdata = np.array(range(n_emotion))
 
                 # 3종류 감정 각각 누적 데이터 plot
-                print('emotion:',np.mean(emotion_data, axis=0))
+                #print('emotion:',np.mean(emotion_data, axis=0))
                 
                     
                 for i in range(3):
                     list_line[i].set_data(xdata, emotion_data[:,i] * 100) ## temp
                     
                 axes_list[0].set_xlim((0, n_emotion))
-                print(n_emotion)
+                #axes_list[1].set_xlim((0, 3))
+                #print(n_emotion)
 
-                        
-                val_1+=np.mean(emotion_data[-1-n_bin:-1,1], axis=0)
-                val_2+=np.mean(emotion_data[-1-n_bin:-1:,2], axis=0)
-                print(val_1, val_2)
+                cum_1 = emotion_data[-cur_bin:,1]
+                cum_2 = emotion_data[-cur_bin:,2]
+                print('cum1',cum_1)
+                val_1+=np.mean(cum_1, axis=0)*0.1
+                val_2+=np.mean(cum_2, axis=0)*0.1
+                print(val_1,val_2)
+                #print(val_1, val_2)
                 #mean_val  = np.mean(emotion_data)
                 #emotion_hist[i]
                 #list_line[1].set_data([1,2], [mean_val, mean_val**2] ) ## temp
                 for bar_i, h in zip(ax_bar, [val_1,val_2]):
-                    print('h: ',h)
+                    #print('h: ',h)
                     bar_i.set_height(h)
                 
-                #ax3.set_xlim
-                #fig.tight_layout()
 
-                plt.draw()
-                plt.pause(0.1)
+                #plt.draw()
+                #plt.pause(0.1)
+                
+                
+                
+                plot_fig = fig2data(fig_total)
+                plot_fig = cv2.resize(plot_fig, (fig_width*2,480))
+                
+                plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGB2BGR)
+                #print('fig:',np.shape(plot_fig))
+                
+                
+                
                 # time.sleep(0.1)
 
                 # add this if you don't want l the window to disappear at the end
-                # plt.show()
+                plt.show(fig_total)
       
         
         if  mode_capture:
@@ -477,11 +530,16 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                             cur_font, 0.7, cur_color, 2)
                 mode_capture=False
                         
-        plt.pause(0.1)
-        plt.ioff()
-        plt.show()
-            
-        refreshScreen(frame)
+        #plt.pause(0.1)
+        #plt.ioff()
+        #plt.show()
+        
+        #print(np.shape(frame))
+        frame_concat = np.concatenate((frame, plot_fig), axis=1)
+        #frame = plot_fig
+#        b, g, r = cv2.split(frame_concat)   # img파일을 b,g,r로 분리
+#        frame_concat = cv2.merge([r,g,b]) # b, r을 바꿔서 Merge
+        refreshScreen(frame_concat)
         key = cv2.waitKey(20)
         
         if key == ord('s'): # 캡쳐 모드 시작!
@@ -511,6 +569,63 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             except:
                 print('Image can not be saved!')
 
+#
+#import dash
+#from dash.dependencies import Output, Event
+#
+#import dash_core_components as dcc
+#import dash_html_components as html
+#import plotly
+#import random
+#import plotly.graph_objs as go
+#from collections import deque
+#import time
+#import pandas as pd
+#
+#
+#X = deque(maxlen=20)
+#Y = deque(maxlen=20)
+#X.append(1)
+#Y.append(1)
+#
+#app = dash.Dash(__name__)
+#app.layout = html.Div(
+#    [
+#         dcc.Graph(id='live-graph', animate=True),
+#         dcc.Interval(
+#            id='graph-update',
+#            interval=1000 # per 1 sec
+#            ),
+#         ]
+#    )
+#@app.callback(Output('live-graph','figure'),
+#            events = [Event('graph-update', 'interval')]) 
+#
+#
+#def update_graph():
+#    global X
+#    global Y
+#    global emotion_hist
+#    
+#    df = pd.DataFrame(emotion_hist)
+#    if len(df) > 10:
+#        
+#        df = df.rename(columns={0:'happy',1:'angry',2:'neutral'})
+#        X = df.index
+#        Y = df['happy']
+#    else:
+#        X.append(X[-1]+1)
+#        Y.append(Y[-1]+Y[-1]*random.uniform(-0.1,0.1))
+#    
+### build data
+#    data = go.Scatter(
+#            y = list(Y),
+#            x = list(X),
+#            name='Nier', # 'Scatter'
+#            mode='lines+markers'
+#            )
+#    return {'data':[data], 'layout': go.Layout(xaxis = dict(range=[min(X), max(X)]), yaxis = dict(range=[0, 100]))}
+
 def main():
     print("Start main() function.")
     
@@ -524,6 +639,10 @@ def main():
 
 
 if __name__ == '__main__':
+    plt.close('all')
+    #app.run_server(debug=True)
     main()
+    
+    
 
 cv2.destroyAllWindows()
