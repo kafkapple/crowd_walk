@@ -72,7 +72,7 @@ green = (255, 170, 165) # 하늘색? 에메랄드 그린
 dahong = (254,74,173)#(241, 153, 160)
 pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94']
 fig_width=400
-plot_fig = np.zeros((480,fig_width*2,3))
+#plot_fig = np.random.random((480,fig_width*2,3))
 
 cur_color = pink#dahong#RED_COLOR#(255, 170, 165) # 에메랄드 그린
 color = hex2rgb(pastel_rainbow[0])
@@ -116,16 +116,10 @@ plt.rcParams['figure.constrained_layout.use'] = True
 ## Main
 fig_size= (10,6)
 
-#fig_total = plt.figure(figsize=fig_size)
-#fig_total, axes_list = plt.subplots(1,2)
 fig_total, axes_list = plt.subplots(1,2)
-#ax1 = plt.subplot(1,2,1)#figsize=fig_size)#figsize=(10,4))
-#ax3 = plt.subplot(1,2,2)#figsize=fig_size)#figsize=(10,4))
-#ax3 = plt.axes(xlim=(0, 100), ylim=(-10, 150))
 
 axes_list[0].set(ylabel='%', xlabel='Time')
 #ax3.legend(loc='upper right')
-#axes_list = [ax1,ax3]
 
 label_test = ['A', 'H', 'N']
 line1 = []
@@ -134,7 +128,20 @@ line3 = []
 list_line = [line1, line2, line3]
     
 for i in range(3):
-        list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1, label=labels[i])#,  color=pastel_rainbow[i])
+        list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1)# label=labels[i])#,  color=pastel_rainbow[i])
+
+
+def fig2data ( fig ):
+    """
+    @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
+    @param fig a matplotlib figure
+    @return a numpy 3D array of RGBA values
+    """
+    # draw the renderer
+    fig.canvas.draw ( )
+    buf = np.array(fig.canvas.renderer._renderer)
+    return buf
+
 
 
 def legend_patch(current_palette, labels):
@@ -156,8 +163,8 @@ for i_ax in axes_list:
     i_ax.grid(False)
     #i_ax.get_xticklines().set_visible(False)
     #i_ax.get_yticklines().set_visible(False)
-    #plt.setp(i_ax.get_xticklabels(), visible=False)
-    #plt.setp(i_ax.get_yticklabels(), visible=False)
+    plt.setp(i_ax.get_xticklabels(), visible=False)
+    plt.setp(i_ax.get_yticklabels(), visible=False)
     i_ax.tick_params(axis='both', which='both', length=10)
 
 
@@ -305,23 +312,7 @@ def detect_area_driver(frame, face_coordinates, color_ch=1):
 #                            cur_font, 1.1, green, 2)
 #            
                 
-def fig2data ( fig ):
-    """
-    @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
-    @param fig a matplotlib figure
-    @return a numpy 3D array of RGBA values
-    """
-    # draw the renderer
-    fig.canvas.draw ( )
-    buf = np.array(fig.canvas.renderer._renderer)
-    # Get the RGBA buffer from the figure
-#    w,h = fig.canvas.get_width_height()
-#    buf = np.fromstring ( fig.canvas.tostring_rgb(), dtype=np.uint8 )
-#    buf.shape = ( w, h,3 )
-# 
-    # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
-    #buf = np.roll ( buf, 3, axis = 2 )
-    return buf
+
             
 def refreshScreen(frame):
     global face_68
