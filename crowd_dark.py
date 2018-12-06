@@ -393,7 +393,7 @@ def setDefaultCameraSetting():
     cv2.setWindowProperty(winname=windowName, prop_id=cv2.WINDOW_FULLSCREEN, prop_value=cv2.WINDOW_FULLSCREEN)
 
 def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emotion class models
-    global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr, emotion_hist, plot_fig
+    global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr, emotion_hist#, plot_fig
     start_t = time.time()
     labels = ['Angry','Happy','Neutral']
     color_list = [RED_COLOR, dahong, WHITE_COLOR]
@@ -421,6 +421,14 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
     val_2 = 0
     print('start')
     while True:
+        
+        
+        ### 0. Initialization
+        #### plot figure
+        plot_fig = fig2data(fig_total)
+        plot_fig = cv2.resize(plot_fig, (fig_width*2,480))
+        plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGB2BGR)
+        
         cur_t = time.time()
         #result = [cur_t-start_t]*3  # test.
         
@@ -431,7 +439,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
         detect_area_driver(frame, face_coordinates,color_ch)        
         #frame_plt = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
                 
-        plt.ion()               
+        #plt.ion()               
         #result = np.mean(face_68) # 68x2
         #qprint(result)
 #        cv2.putText(frame, "Press Q to quit",
@@ -500,7 +508,6 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 
                 plot_fig = fig2data(fig_total)
                 plot_fig = cv2.resize(plot_fig, (fig_width*2,480))
-                
                 plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGB2BGR)
                 #print('fig:',np.shape(plot_fig))
                 
@@ -509,7 +516,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 # time.sleep(0.1)
 
                 # add this if you don't want l the window to disappear at the end
-                plt.show(fig_total)
+                #plt.show(fig_total)
       
         
         if  mode_capture:
