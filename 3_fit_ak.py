@@ -184,7 +184,7 @@ if __name__ == '__main__':
     
 
     # 1. data load
-    #class_label = ['background', 'body','nose', 'tail']
+    
     
     target_size=96
     class_label = ['1', '2', '3', '4', '5', '6']
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size = 0.2, shuffle = True, random_state=33)
     
     ######################### Autokeras fit start.
-    clf = model_fit(x_train, y_train, resume=True, iter_num=10, time_limit = 12)
+    clf = model_fit(x_train, y_train, resume=True, iter_num=10, time_limit = 3)
     
     ##### load best model
     print('load best model')

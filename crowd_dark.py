@@ -43,12 +43,10 @@ from keras.utils.generic_utils import CustomObjectScope
 import matplotlib.patches as mpatches
 
 plt.style.use('dark_background')
-model_weight_path = r'F:\github\fer\model\models\ak8.h5'
 
 
-model_weight_path = './src/ak8.h5' #r'F:\github\fer\model\models\ak8.h5'
+model_weight_path = './src/ak_crowd_compiled.h5'
 
-emotion = ['Angry', 'Happy', 'Neutral']
 model = load_model(model_weight_path)
 
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -70,8 +68,13 @@ WHITE_COLOR = (255, 255, 255)
 pink = (255,139,148)
 green = (255, 170, 165) # 하늘색? 에메랄드 그린
 dahong = (254,74,173)#(241, 153, 160)
-pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94']
+pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94','#a8e6cf']
 fig_width=400
+
+#labels = ['Angry','Happy','Neutral']
+labels = ['1', '2', '3', '4', '5', '6']
+n_label = len(labels)
+color_list = [RED_COLOR, dahong, WHITE_COLOR]
 #plot_fig = np.random.random((480,fig_width*2,3))
 
 cur_color = pink#dahong#RED_COLOR#(255, 170, 165) # 에메랄드 그린
@@ -90,12 +93,12 @@ min_x, max_x, min_y, max_y = 0, 0, 0, 0
 #(rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
 
 emotion_hist = []
-labels = ['Angry','Happy','Neutral']
 
 #sys.path.append("../")
 
 windowName = 'Crowd Walk'
-FACE_SHAPE = (48, 48)
+fig_size = 96
+FACE_SHAPE = (fig_size, fig_size)
 
 isContinue = True
 isArea = True
@@ -121,13 +124,13 @@ fig_total, axes_list = plt.subplots(1,2)
 axes_list[0].set(ylabel='%', xlabel='Time')
 #ax3.legend(loc='upper right')
 
-label_test = ['A', 'H', 'N']
-line1 = []
-line2 = []
-line3 = []
-list_line = [line1, line2, line3]
-    
-for i in range(3):
+#label_test = ['A', 'H', 'N']
+#line1 = []
+#line2 = []
+#line3 = []
+#list_line = [line1, line2, line3]
+list_line = [[] for i in labels]   
+for i in range(n_label):
         list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1)# label=labels[i])#,  color=pastel_rainbow[i])
 
 
@@ -152,7 +155,7 @@ def legend_patch(current_palette, labels):
     return patches
 
 
-patches = legend_patch(pastel_rainbow, label_test) 
+patches = legend_patch(pastel_rainbow, labels) 
 axes_list[1].legend(handles = patches, loc='best', edgecolor =None, fontsize=13, bbox_to_anchor=(0.8,0.7)) # upper right
 
 
@@ -211,7 +214,7 @@ def check_resize_area(face_coordinates):
     return False
 
 
-def preprocess(img, face_coordinates, face_shape=(48, 48)):
+def preprocess(img, face_coordinates, face_shape=(fig_size, fig_size)):
     face = crop_face(img, face_coordinates)
     if face is not None:
         face_resize = cv2.resize(face, face_shape)
@@ -395,8 +398,7 @@ def setDefaultCameraSetting():
 def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emotion class models
     global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr, emotion_hist#, plot_fig
     start_t = time.time()
-    labels = ['Angry','Happy','Neutral']
-    color_list = [RED_COLOR, dahong, WHITE_COLOR]
+    
     n_label = len(labels)
     n_pic = 10
     
@@ -460,7 +462,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             n_data = 20
             # print(str(n_emotion)+'\n')
 
-            if n_emotion % 1 == 0:
+            if n_emotion % 10 == 0:
                 if n_data < n_emotion and flag_curr:
                     #print('cutting')
                     emotion_hist_cur = emotion_hist[-1-n_data:]
@@ -479,7 +481,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 #print('emotion:',np.mean(emotion_data, axis=0))
                 
                     
-                for i in range(3):
+                for i in range(n_label):
                     list_line[i].set_data(xdata, emotion_data[:,i] * 100) ## temp
                     
                 axes_list[0].set_xlim((0, n_emotion))
@@ -488,11 +490,12 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
 
                 cum_1 = emotion_data[-cur_bin:,1]
                 cum_2 = emotion_data[-cur_bin:,2]
-                print('cum1',cum_1)
+                #print('cum1',cum_1)
                 val_1+=np.mean(cum_1, axis=0)*0.1
                 val_2+=np.mean(cum_2, axis=0)*0.1
-                print(val_1,val_2)
+                
                 #print(val_1, val_2)
+                print(emotion_data)
                 #mean_val  = np.mean(emotion_data)
                 #emotion_hist[i]
                 #list_line[1].set_data([1,2], [mean_val, mean_val**2] ) ## temp
