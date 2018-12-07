@@ -186,21 +186,21 @@ if __name__ == '__main__':
     # 1. data load
     
     
-    target_size=96
+    target_size=48
     class_label = ['1', '2', '3', '4', '5', '6']
     n_class = len(class_label)
-    data_path = r'F:\Data\gen\crowd_aug'
+    #data_path = r'F:\Data\gen\crowd_aug'
     #'/github/neuro/'
-    os.chdir(data_path)
-    list_files = os.listdir(data_path)
+    #os.chdir(data_path)
+    #list_files = os.listdir(data_path)
     
     ## npy data load
-    x_data = np.load('./x.npy')  # 7 means total 7 members, not 7 emotion classes :)
-    y_data = np.load('./y.npy')    
+    x_data = np.load('./x_{}.npy'.format(target_size))  # 7 means total 7 members, not 7 emotion classes :)
+    y_data = np.load('./y_{}.npy'.format(target_size))    
     x_data = x_data.reshape(-1, target_size, target_size,1)
     y_data = np.argmax(y_data, axis=1) # convert one hot encoding to catogorical integer
+    print(np.shape(y_data))
     print('\n#####################\nload npy\n')
-          
           
           
     os.chdir('/python/autokeras/')    
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size = 0.2, shuffle = True, random_state=33)
     
     ######################### Autokeras fit start.
-    clf = model_fit(x_train, y_train, resume=True, iter_num=10, time_limit = 3)
+    clf = model_fit(x_train, y_train, resume=True, iter_num=10, time_limit = 9)
     
     ##### load best model
     print('load best model')

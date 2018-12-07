@@ -149,7 +149,7 @@ def main():
     #os.chdir(cur_loc) # current location
     #pic_list = glob.glob('*.jpg')   
     
-    path_aug = os.path.join(path_save,'dlib')
+    path_aug = os.path.join(path_save,'dlib_origin')
     if not os.path.exists(path_aug): # split dir 없으면 생성
         os.makedirs(path_aug)
     for i in class_label:
@@ -176,18 +176,20 @@ def main():
             i_pic = cv2.imread(i_pic, cv2.IMREAD_GRAYSCALE)
             gray_face, face_coordinates = dlib_face_coordinates(i_pic) 
             
-            ## margin 
-            (x,y,w,h) = face_coordinates 
-            margin_crop = 0.1
-            #x= int(x -x*margin_crop)
-            y=int(y-y*margin_crop*3)
-            w=int(w+w*margin_crop)
-            h=int(h+h*margin_crop)
-            face_coordinates = (x,y,w,h)
+#            ## margin 
+#            (x,y,w,h) = face_coordinates 
+#            margin_crop = 0.1
+#            #x= int(x -x*margin_crop)
+#            y=int(y-y*margin_crop*3)
+#            w=int(w+w*margin_crop)
+#            h=int(h+h*margin_crop)
+#            face_coordinates = (x,y,w,h)
+            
             gray_face = crop_face(gray_face, face_coordinates)
-            #face_shape=(96,96)
-            #gray_face=i_pic
-            #gray_face = cv2.resize(gray_face, face_shape)
+            target_size = 48
+            face_shape=(target_size,target_size)
+            
+            gray_face = cv2.resize(gray_face, face_shape)
             path_aug_final = os.path.join(path_aug, x_dir,str(count)+'.jpg')
             cv2.imwrite(path_aug_final, gray_face)
             count+=1

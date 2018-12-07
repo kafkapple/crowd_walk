@@ -45,7 +45,7 @@ import matplotlib.patches as mpatches
 plt.style.use('dark_background')
 
 
-model_weight_path = './src/ak_crowd_compiled.h5'
+model_weight_path = './src/ak_crowd_compiled_48.h5'
 
 model = load_model(model_weight_path)
 
@@ -72,7 +72,8 @@ pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94','#a8e6cf']
 fig_width=400
 
 #labels = ['Angry','Happy','Neutral']
-labels = ['1', '2', '3', '4', '5', '6']
+labels = ['happy', 'fear', 'funny', 'boring', 'dunno', 'relax']
+#labels = ['1', '2', '3', '4', '5', '6']
 n_label = len(labels)
 color_list = [RED_COLOR, dahong, WHITE_COLOR]
 #plot_fig = np.random.random((480,fig_width*2,3))
@@ -97,7 +98,7 @@ emotion_hist = []
 #sys.path.append("../")
 
 windowName = 'Crowd Walk'
-fig_size = 96
+fig_size = 48
 FACE_SHAPE = (fig_size, fig_size)
 
 isContinue = True
@@ -131,7 +132,7 @@ axes_list[0].set(ylabel='%', xlabel='Time')
 #list_line = [line1, line2, line3]
 list_line = [[] for i in labels]   
 for i in range(n_label):
-        list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1)# label=labels[i])#,  color=pastel_rainbow[i])
+        list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1, label=labels[i],  color=pastel_rainbow[i] )
 
 
 def fig2data ( fig ):
@@ -462,7 +463,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             n_data = 20
             # print(str(n_emotion)+'\n')
 
-            if n_emotion % 10 == 0:
+            if n_emotion % 1 == 0:
                 if n_data < n_emotion and flag_curr:
                     #print('cutting')
                     emotion_hist_cur = emotion_hist[-1-n_data:]

@@ -43,20 +43,24 @@ class_label = ['1', '2', '3', '4', '5', '6']
 split_label = ['train', 'validation', 'test']
 n_class = len(class_label)
 #path = '/data/'
-data_path = r'F:\Data\gen\dlib'
+data_path = r'F:\Data\gen\dlib_origin'
 
-pic_size = 96
+pic_size = 48
 
 ### make train/val/test folder
-
+#
+#def preprocess_img(img_path):
+#    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  # load img as grayscale
+#    img = clahe.apply(img)  # histogram equalization
+#    img = np.array(img)/255.  # normalize
+#    return img
+#
+        
 def preprocess_keras(img):
     #img = crop_center(img)
-    
-    
     #print(img.shape)
     #img = np.array(img)/255.  # normalize
     #img = saturate_img(img, max_thr=10)
-    
     
     img=np.array(img, np.uint8)
     img = clahe.apply(img)  # histogram equalizatio
@@ -266,14 +270,6 @@ def saturate_img(img, max_thr=100):
     else:
         return img
 
-def preprocess_img(img_path):
-    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  # load img as grayscale
-    img = clahe.apply(img)  # histogram equalization
-    img = np.array(img)/255.  # normalize
-    return img
-
-
-        
         
 
 if __name__ == "__main__":
@@ -285,8 +281,8 @@ if __name__ == "__main__":
     
     ##### augmentation using keras
     x, y  = aug_k_from_dir(data_path, batch_size = 32, total_size = 6000)
-    np.save('x.npy', x)
-    np.save('y.npy', y)
+    np.save('x_{}.npy'.format(pic_size), x)
+    np.save('y_{}.npy'.format(pic_size), y)
     
     
     
