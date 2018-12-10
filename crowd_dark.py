@@ -42,6 +42,10 @@ from keras.utils.generic_utils import CustomObjectScope
 
 import matplotlib.patches as mpatches
 
+import mss
+import mss.tools
+
+
 plt.style.use('dark_background')
 
 
@@ -69,7 +73,8 @@ pink = (255,139,148)
 green = (255, 170, 165) # 하늘색? 에메랄드 그린
 dahong = (254,74,173)#(241, 153, 160)
 pastel_rainbow = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5', '#ff8b94','#a8e6cf']
-fig_width=400
+
+
 
 #labels = ['Angry','Happy','Neutral']
 labels = ['happy', 'fear', 'funny', 'boring', 'dunno', 'relax']
@@ -174,7 +179,7 @@ for i_ax in axes_list:
 
 
 axes_list[0].set_xlim(auto=True)
-axes_list[0].set_ylim((-5,120))
+axes_list[0].set_ylim((-5,150))
 
 ## bar graph
 axes_list[1].set_ylim((0,100))
@@ -306,27 +311,13 @@ def detect_area_driver(frame, face_coordinates, color_ch=1):
         if face is not None:
             input_img = np.expand_dims(face, axis=0)
             input_img = np.stack((input_img,)*color_ch, -1 )
-            
-
-#        if not mode_capture:
-#            cv2.putText(frame, "Press S to start capture", (int(camera_width * 0.2), int(camera_height * 0.18)),
-#                            cur_font, 1.1, dahong, 2)            
-#    else:
-#        cv2.putText(frame, "Please look at the camera :)", (int(camera_width * 0.1), int(camera_height * 0.5)),
-#                            cur_font, 1.1, green, 2)
-#            
-                
-
-            
-def refreshScreen(frame):
-    global face_68
-#    if isArea:
-#        check_detect_area(frame) # 하얀 선으로 detect area 표시
         
+def refreshScreen(frame): # for landmark 
+    global face_68
+
     if isLandmark:
         draw_landmark(frame, rect)
-    #drawFace(frame, bounding_box)
-    cv2.imshow(windowName, frame) 
+    #cv2.imshow(windowName, frame) 
     #print(np.shape(np.array(frame)))
     
 ## Save    
@@ -359,16 +350,6 @@ def user_img_capture():
         img_counter += 1
     except:
         print('얼굴이 안보여요 ')
-        
-    #return img_counter
-#
-#import pillow as PIL
-#
-#def showarray(a, fmt='jpeg'):
-#    f = StringIO()
-#    PIL.Image.fromarray(a).save(f, fmt)
-    
-#IPython.display.display(IPython.display.Image(data=f.getvalue()))
 
 def change_width(ax, new_value):
     for patch in ax.patches :
@@ -396,42 +377,70 @@ def setDefaultCameraSetting():
     cv2.namedWindow(winname=windowName)
     cv2.setWindowProperty(winname=windowName, prop_id=cv2.WINDOW_FULLSCREEN, prop_value=cv2.WINDOW_FULLSCREEN)
 
+def screen_capture():
+    with mss.mss() as sct:
+        # Get information of monitor 2
+        print('capture')
+        monitor_number = 2
+        mon = sct.monitors[monitor_number]
+        monitor = sct.monitors[1]
+        # The screen part to capture
+        
+        # Capture a bbox using percent values
+        left = monitor["left"] + monitor["width"] * 30 // 100  # 5% from the left
+        top = monitor["top"] + monitor["height"] * 30 // 100  # 5% from the top
+        right = left + 1000  # 400px width
+        lower = top + 600  # 400px height
+        bbox = (left, top, right, lower)
+        #sct_img = sct.grab(monitor)
+        #sct_im = sct.grab(bbox)
+        scr_capture = np.array(sct.grab(bbox))
+        scr_capture = cv2.resize(scr_capture, (840, 480))
+        scr_capture = cv2.cvtColor(scr_capture, cv2.COLOR_RGBA2BGR)
+        
+        
+    return scr_capture
+
 def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emotion class models
     global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr, emotion_hist#, plot_fig
     start_t = time.time()
-    
+    #######
+    total_shape = (1900, 1000)
+    plot_height = 500
+    fig_width = 640 # 640  -> total 1280 x 960. (com = 1920 x 1080)
+    plot_width = 1480
+    plot_1_width = 740
+    fig_1_shape = (plot_1_width, plot_height) 
+    fig_2_shape = (plot_width-plot_1_width, plot_height)
     n_label = len(labels)
     n_pic = 10
     
-    ### plot
-    
-  
-    #### For live plot
-    # plt.show()
-    
-    
-    #fig = plt.figure()
-    
-    # axes = plt.gca()
-    
-    #for i in range(3):
-    #list_plot[0], = axes_list[0].plot([], [], 'o-', linewidth=3, label=labels[0])
     n_bins=2
     ax_bar = axes_list[1].bar(range(n_bins), np.ones(n_bins)*10, color=pastel_rainbow[0:4:2])#,edgecolor='black')
-    change_width(ax_bar, 0.7)
+    change_width(ax_bar, 0.6)
     #ax3.bar(np.arange(len(data)),data,)
     val_1 = 0
     val_2 = 0
     print('start')
-    while True:
-        
-        
-        ### 0. Initialization
+     ### 0. Initialization
         #### plot figure
-        plot_fig = fig2data(fig_total)
-        plot_fig = cv2.resize(plot_fig, (fig_width*2,480))
-        plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGB2BGR)
+    plot_fig = fig2data(fig_total)
+    plot_fig = cv2.resize(plot_fig, (fig_width*2,plot_height))
+    plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGBA2BGR)
+    plot_fig_1 = plot_fig[:,:640,:]
+    plot_fig_2 = plot_fig[:,640:,:]
+    plot_fig_1 = cv2.resize(plot_fig_1, fig_1_shape)
+    plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
+    plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
+    
+    while True:
+        ###################################################
+        ##### capture
         
+        scr_capture = screen_capture() 
+        ###################### plot
+        
+        #scr_capture = screen_capture() #np.zeros((480, 640,3))
         cur_t = time.time()
         #result = [cur_t-start_t]*3  # test.
         
@@ -440,19 +449,9 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
         face_coordinates = dlib_face_coordinates(frame) #################################3 dlib coordinate
         ### face -> matplotlib        
         detect_area_driver(frame, face_coordinates,color_ch)        
-        #frame_plt = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-                
-        #plt.ion()               
-        #result = np.mean(face_68) # 68x2
-        #qprint(result)
-#        cv2.putText(frame, "Press Q to quit",
-#                            (int(camera_width * 0.7), int(camera_height * 0.05)),
-#                            cur_font, 0.7, green, 1)
-            
+
         if input_img is not None:
             result = model.predict(input_img)[0]
-            #print(result)
-            #print(np.mean(face_coordinates))
 
             # History saving
             emotion_hist.append(result)  # to track emotion history
@@ -463,7 +462,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             n_data = 20
             # print(str(n_emotion)+'\n')
 
-            if n_emotion % 1 == 0:
+            if n_emotion % 4 == 0:
                 if n_data < n_emotion and flag_curr:
                     #print('cutting')
                     emotion_hist_cur = emotion_hist[-1-n_data:]
@@ -489,11 +488,11 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 #axes_list[1].set_xlim((0, 3))
                 #print(n_emotion)
 
-                cum_1 = emotion_data[-cur_bin:,1]
-                cum_2 = emotion_data[-cur_bin:,2]
+                cum_1 = emotion_data[-cur_bin:,0]
+                cum_2 = emotion_data[-cur_bin:,1]
                 #print('cum1',cum_1)
-                val_1+=np.mean(cum_1, axis=0)*0.1
-                val_2+=np.mean(cum_2, axis=0)*0.1
+                val_1+=np.mean(cum_1, axis=0)*2
+                val_2+=np.mean(cum_2, axis=0)*2
                 
                 #print(val_1, val_2)
                 print(emotion_data)
@@ -501,52 +500,32 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 #emotion_hist[i]
                 #list_line[1].set_data([1,2], [mean_val, mean_val**2] ) ## temp
                 for bar_i, h in zip(ax_bar, [val_1,val_2]):
-                    #print('h: ',h)
                     bar_i.set_height(h)
                 
-
-                #plt.draw()
-                #plt.pause(0.1)
-                
-                
-                
+                ### graph 
                 plot_fig = fig2data(fig_total)
-                plot_fig = cv2.resize(plot_fig, (fig_width*2,480))
-                plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGB2BGR)
+                plot_fig = cv2.resize(plot_fig, (fig_width*2,plot_height))
+                plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGBA2BGR)
+                
+                plot_fig_1 = plot_fig[:,:640,:]
+                plot_fig_2 = plot_fig[:,640:,:]
+                plot_fig_1 = cv2.resize(plot_fig_1, fig_1_shape)
+                plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
+                plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
                 #print('fig:',np.shape(plot_fig))
-                
-                
-                
-                # time.sleep(0.1)
+        
+        ##########################################################
+        # 
+        refreshScreen(frame) # draw flandmark 
+        
+        #### final concat
+        print(np.shape(frame), np.shape(scr_capture), np.shape(plot_fig))
+        frame_concat = np.concatenate((frame, scr_capture), axis=1)
+        print(np.shape(frame_concat))
+        frame_concat = np.concatenate((frame_concat, plot_fig), axis=0)
+        frame_concat = cv2.resize(frame_concat, total_shape)
 
-                # add this if you don't want l the window to disappear at the end
-                #plt.show(fig_total)
-      
-        
-        if  mode_capture:
-            if img_counter in range(1, n_pic*n_label+1):
-                cv2.putText(frame, "Press space bar to capture",
-                            (int(camera_width * 0.1), int(camera_height * 0.18)),
-                            cur_font, 1.2, dahong, 2)
-                cv2.putText(frame, "{} Img ({}/{})".format(labels[(img_counter-1)//n_pic],(img_counter-1)%n_pic+1, n_pic),
-                        (int(camera_width * 0.35), int(camera_height * 0.85)),
-                        cur_font, 0.8, color_list[(img_counter-1)//n_pic], 2)
-         
-            else:
-                cv2.putText(frame, "Finish !", (int(camera_width * 0.31), int(camera_height * 0.15)),
-                            cur_font, 0.7, cur_color, 2)
-                mode_capture=False
-                        
-        #plt.pause(0.1)
-        #plt.ioff()
-        #plt.show()
-        
-        #print(np.shape(frame))
-        frame_concat = np.concatenate((frame, plot_fig), axis=1)
-        #frame = plot_fig
-#        b, g, r = cv2.split(frame_concat)   # img파일을 b,g,r로 분리
-#        frame_concat = cv2.merge([r,g,b]) # b, r을 바꿔서 Merge
-        refreshScreen(frame_concat)
+        cv2.imshow(windowName, frame_concat) 
         key = cv2.waitKey(20)
         
         if key == ord('s'): # 캡쳐 모드 시작!
@@ -555,83 +534,13 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
             mode_capture = not mode_capture
         elif key == ord('l'): # land mark on off
             isLandmark = not isLandmark
-        elif key == ord('o'):
-            expend_detect_area()
-        elif key == ord('p'):
-            reduce_detect_area()
         elif key == ord('q'): # exit
             break
-        elif key == ord('c'):
-            flag_curr = not flag_curr
-            print('plot mode change')
-            
         elif key%256 == 32:  # jj_add / press space bar to save cropped gray image
             try:
                 user_img_capture() #img_counter)
-                #time_now = datetime.now().strftime('%Y%m%d_%H%M%S')
-                #img_name = './'+time_now+"_cropped_{}.png".format(img_counter)
-                #cv2.imwrite(img_name, np.squeeze(input_img))#*255.))  # to recover normalized img to save as gray scale image
-                #print("{} written!".format(img_name))
-                #img_counter += 1
             except:
                 print('Image can not be saved!')
-
-#
-#import dash
-#from dash.dependencies import Output, Event
-#
-#import dash_core_components as dcc
-#import dash_html_components as html
-#import plotly
-#import random
-#import plotly.graph_objs as go
-#from collections import deque
-#import time
-#import pandas as pd
-#
-#
-#X = deque(maxlen=20)
-#Y = deque(maxlen=20)
-#X.append(1)
-#Y.append(1)
-#
-#app = dash.Dash(__name__)
-#app.layout = html.Div(
-#    [
-#         dcc.Graph(id='live-graph', animate=True),
-#         dcc.Interval(
-#            id='graph-update',
-#            interval=1000 # per 1 sec
-#            ),
-#         ]
-#    )
-#@app.callback(Output('live-graph','figure'),
-#            events = [Event('graph-update', 'interval')]) 
-#
-#
-#def update_graph():
-#    global X
-#    global Y
-#    global emotion_hist
-#    
-#    df = pd.DataFrame(emotion_hist)
-#    if len(df) > 10:
-#        
-#        df = df.rename(columns={0:'happy',1:'angry',2:'neutral'})
-#        X = df.index
-#        Y = df['happy']
-#    else:
-#        X.append(X[-1]+1)
-#        Y.append(Y[-1]+Y[-1]*random.uniform(-0.1,0.1))
-#    
-### build data
-#    data = go.Scatter(
-#            y = list(Y),
-#            x = list(X),
-#            name='Nier', # 'Scatter'
-#            mode='lines+markers'
-#            )
-#    return {'data':[data], 'layout': go.Layout(xaxis = dict(range=[min(X), max(X)]), yaxis = dict(range=[0, 100]))}
 
 def main():
     print("Start main() function.")
