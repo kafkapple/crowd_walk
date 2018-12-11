@@ -127,7 +127,7 @@ fig_size= (10,6)
 
 fig_total, axes_list = plt.subplots(1,2)
 
-axes_list[0].set(ylabel='%', xlabel='Time')
+#axes_list[0].set(ylabel='%', xlabel='Time')
 #ax3.legend(loc='upper right')
 
 #label_test = ['A', 'H', 'N']
@@ -380,9 +380,9 @@ def setDefaultCameraSetting():
 def screen_capture():
     with mss.mss() as sct:
         # Get information of monitor 2
-        print('capture')
-        monitor_number = 2
-        mon = sct.monitors[monitor_number]
+        #print('capture')
+        #monitor_number = 2
+        #mon = sct.monitors[monitor_number]
         monitor = sct.monitors[1]
         # The screen part to capture
         
@@ -403,17 +403,17 @@ def screen_capture():
 
 def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emotion class models
     global isContinue, isGraph, isArea, isLandmark, input_img, rect, bounding_box, result, mode_capture, img_counter, face_68, emotion, model, flag_curr, emotion_hist#, plot_fig
-    start_t = time.time()
+    start_time = time.time()
     #######
     total_shape = (1900, 1000)
     plot_height = 500
     fig_width = 640 # 640  -> total 1280 x 960. (com = 1920 x 1080)
     plot_width = 1480
-    plot_1_width = 740
+    plot_1_width = int(plot_width*7/10)
     fig_1_shape = (plot_1_width, plot_height) 
     fig_2_shape = (plot_width-plot_1_width, plot_height)
     n_label = len(labels)
-    n_pic = 10
+    #n_pic = 10
     
     n_bins=2
     ax_bar = axes_list[1].bar(range(n_bins), np.ones(n_bins)*10, color=pastel_rainbow[0:4:2])#,edgecolor='black')
@@ -433,69 +433,114 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
     plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
     plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
     
+    ## data initialization
+    emotion_array = np.zeros((n_label,1)) # emotion array initialization
+    result = np.zeros((n_label,1))
+    flag_start = True
+    count_start = 0
+    
     while True:
         ###################################################
+        # 6fps
+        time_diff = int(time.time()-start_time) # time_diff
+        #diff_time = cur_time-start_time
+        #print(time_diff)
+        count_start += 1
         ##### capture
         
         scr_capture = screen_capture() 
         ###################### plot
         
         #scr_capture = screen_capture() #np.zeros((480, 640,3))
-        cur_t = time.time()
-        #result = [cur_t-start_t]*3  # test.
         
         input_img, rect, bounding_box = None, None, None
         ret, frame = capture.read()
         face_coordinates = dlib_face_coordinates(frame) #################################3 dlib coordinate
         ### face -> matplotlib        
         detect_area_driver(frame, face_coordinates,color_ch)        
-
-        if input_img is not None:
-            result = model.predict(input_img)[0]
-
+        time_resol = 3*1 #3초에 한번씩 CNN model prediction
+        n_refresh = 1 # 2초에 한번씩 갱신.
+        #print(count_start)
+        if input_img is not None: # if there is a face
+            noise = np.random.random((n_label,1))*10-5 # 10% random noise
+            #noise = np.zeroas((n_label,1)) # 10% random noise
+            #print(np.shape(noise))
+            if count_start % time_resol ==0:#time_diff % time_resol ==0: # 정해진 간격으로 prediction. work load 줄이기 위해.
+                result = model.predict(input_img)[0]*100  # get prediction
+                #result = np.reshape(result, (n_label,1)) + noise
+                print('Pred!!')
+                #result = np.expand_dims(result,1)
+                #print(noise)
+            #else: #평소에는 이전 마지막 데이터에서 10% noise 더해줌
+            result = np.abs(np.reshape(result, (n_label,1)) + noise)
+            
+            
+            if flag_start: # if this is the first time
+                emotion_array = result
+                flag_start =  False
+                #print('first data added')
+            else:
+                #print(np.shape(result), np.shape(emotion_array))
+                emotion_array = np.concatenate((emotion_array,result),axis=1)
+                #print('data added')
+                
             # History saving
-            emotion_hist.append(result)  # to track emotion history
-
+            #emotion_hist.append(result)  # to track emotion history
+            
             ## live plot
-            n_emotion = len(emotion_hist)
-            n_bin = 10
-            n_data = 20
-            # print(str(n_emotion)+'\n')
-
-            if n_emotion % 4 == 0:
-                if n_data < n_emotion and flag_curr:
+            #n_emotion = len(emotion_hist)
+            
+            #print(emotion_array, np.shape(emotion_array))
+            n_emotion = np.shape(emotion_array)[1]
+            label_mean = np.mean(emotion_array, axis=1)
+            print(label_mean)
+            
+            n_data = 20 # 뒤에서 몇번째 데이터 부터 가져올것인지.
+           
+            if n_emotion % n_refresh == 0:
+                if n_data < n_emotion and flag_curr: # 데이터가 특정 이상 누적되면
                     #print('cutting')
-                    emotion_hist_cur = emotion_hist[-1-n_data:]
-                    n_emotion = len(emotion_hist_cur)
+                    #emotion_hist_cur = emotion_hist[-1-n_data:]
+                    cur_emotion_array = emotion_array[:,-n_data:]
+                    
                     #print(n_emotion, emotion_hist_cur[0])
                 else:
-                    emotion_hist_cur = emotion_hist
-                    n_emotion = len(emotion_hist_cur)
+                    #emotion_hist_cur = emotion_hist
+                    cur_emotion_array = emotion_array
                     
-                cur_bin = min(n_bin, n_emotion) 
-                emotion_data = np.array(emotion_hist_cur)
-            
-                xdata = np.array(range(n_emotion))
+                n_emotion = np.shape(cur_emotion_array)[1]
+                cur_bin = min(n_data, n_emotion) # n_data =20 이면, 최근 20개 구간만 현재 데이터 표시. 
+                
+                #emotion_data = np.array(emotion_hist_cur) # convert to array
+                #xdata = np.array(range(n_emotion)) # for x-axis
+                xdata = np.array(range(cur_bin)) # for x-axis
 
                 # 3종류 감정 각각 누적 데이터 plot
                 #print('emotion:',np.mean(emotion_data, axis=0))
                 
-                    
+                #####
+                
+                
                 for i in range(n_label):
-                    list_line[i].set_data(xdata, emotion_data[:,i] * 100) ## temp
+                    list_line[i].set_data(xdata, cur_emotion_array[i,:]) ## temp
                     
                 axes_list[0].set_xlim((0, n_emotion))
-                #axes_list[1].set_xlim((0, 3))
-                #print(n_emotion)
-
-                cum_1 = emotion_data[-cur_bin:,0]
-                cum_2 = emotion_data[-cur_bin:,1]
-                #print('cum1',cum_1)
-                val_1+=np.mean(cum_1, axis=0)*2
-                val_2+=np.mean(cum_2, axis=0)*2
                 
-                #print(val_1, val_2)
-                print(emotion_data)
+                
+                
+                cum_1 = cur_emotion_array[:3,-cur_bin:]
+                cum_2 = cur_emotion_array[3:,-cur_bin:]
+                
+                cum_1_mean = np.mean(cum_1)
+                cum_2_mean = np.mean(cum_2)
+                #cum_2 = emotion_data[-cur_bin:,1]
+                
+                ########### Data for bar graph 
+                val_1+= cum_1_mean/100
+                val_2+=cum_2_mean/100
+               
+                    
+                    #print('Emotion:{a:.3f}'.format(a=i_e))
                 #mean_val  = np.mean(emotion_data)
                 #emotion_hist[i]
                 #list_line[1].set_data([1,2], [mean_val, mean_val**2] ) ## temp
@@ -519,9 +564,9 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
         refreshScreen(frame) # draw flandmark 
         
         #### final concat
-        print(np.shape(frame), np.shape(scr_capture), np.shape(plot_fig))
+        #print(np.shape(frame), np.shape(scr_capture), np.shape(plot_fig))
         frame_concat = np.concatenate((frame, scr_capture), axis=1)
-        print(np.shape(frame_concat))
+        #print(np.shape(frame_concat))
         frame_concat = np.concatenate((frame_concat, plot_fig), axis=0)
         frame_concat = cv2.resize(frame_concat, total_shape)
 
