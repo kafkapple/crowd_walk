@@ -123,21 +123,17 @@ face_68=np.zeros((68,2))
 
 plt.rcParams['figure.constrained_layout.use'] = True
 ## Main
-fig_size= (10,6)
+#fig_size= (10,6)
 
-fig_total, axes_list = plt.subplots(1,2)
+fig_total, axes_list = plt.subplots(1,2, gridspec_kw = {'width_ratios':[7, 3]})
 
 #axes_list[0].set(ylabel='%', xlabel='Time')
 #ax3.legend(loc='upper right')
-
-#label_test = ['A', 'H', 'N']
-#line1 = []
-#line2 = []
-#line3 = []
-#list_line = [line1, line2, line3]
+idx_line = 0
+idx_bar = -1
 list_line = [[] for i in labels]   
 for i in range(n_label):
-        list_line[i], = axes_list[0].plot([], [], 'o-', linewidth=1, label=labels[i],  color=pastel_rainbow[i] )
+        list_line[i], = axes_list[idx_line].plot([], [], 'o-', linewidth=1,  color=pastel_rainbow[i] )
 
 
 def fig2data ( fig ):
@@ -151,8 +147,6 @@ def fig2data ( fig ):
     buf = np.array(fig.canvas.renderer._renderer)
     return buf
 
-
-
 def legend_patch(current_palette, labels):
     patches = []
     for i, _ in enumerate(labels):
@@ -162,35 +156,26 @@ def legend_patch(current_palette, labels):
 
 
 patches = legend_patch(pastel_rainbow, labels) 
-axes_list[1].legend(handles = patches, loc='best', edgecolor =None, fontsize=13, bbox_to_anchor=(0.8,0.7)) # upper right
-
-
+axes_list[idx_bar].legend(handles = patches, loc='best', edgecolor =None, fontsize=13, bbox_to_anchor=(0.8,0.7)) # upper right
+axes_list[idx_bar].get_legend().remove()
 
 for i_ax in axes_list:
     i_ax.spines['top'].set_visible(False)
     i_ax.spines['right'].set_visible(False)
-    i_ax.grid(False)
+    #i_ax.grid(True)
     #i_ax.get_xticklines().set_visible(False)
     #i_ax.get_yticklines().set_visible(False)
     plt.setp(i_ax.get_xticklabels(), visible=False)
-    plt.setp(i_ax.get_yticklabels(), visible=False)
-    i_ax.tick_params(axis='both', which='both', length=10)
+    plt.setp(i_ax.get_yticklabels(), visible=True)
+    i_ax.tick_params(axis='both', which='both', length=5)
+    
 
 
-
-axes_list[0].set_xlim(auto=True)
-axes_list[0].set_ylim((-5,150))
-
+axes_list[idx_line].set_xlim(auto=True)
+axes_list[idx_line].set_ylim((-5,150))
+#x2.legend(loc=(0.65, 0.8))
 ## bar graph
-axes_list[1].set_ylim((0,100))
-
-
-
-#im1 = ax1.imshow(dum)
-#im2 = ax2.imshow(dum)
-#im_plot = ax3.imshow(dum)
-
-## Face
+axes_list[idx_bar].set_ylim((0,100))
 
 
 def dlib_face_coordinates(img):
@@ -244,22 +229,6 @@ def set_default_min_max_area(width, height):
     expand_height = int(cam_height * 0.05)
     reduce_width = int(cam_width * 0.05)
     reduce_height = int(cam_height * 0.05)
-
-
-def expend_detect_area():
-    global min_x, max_x, min_y, max_y
-    min_x -= expand_width
-    min_y -= expand_height
-    max_x += expand_width
-    max_y += expand_height
-
-
-def reduce_detect_area():
-    global min_x, max_x, min_y, max_y
-    min_x += reduce_width
-    min_y += reduce_height
-    max_x -= reduce_width
-    max_y -= reduce_height
 
 
 def check_detect_area(frame):
@@ -396,7 +365,7 @@ def screen_capture():
         #sct_im = sct.grab(bbox)
         scr_capture = np.array(sct.grab(bbox))
         scr_capture = cv2.resize(scr_capture, (840, 480))
-        scr_capture = cv2.cvtColor(scr_capture, cv2.COLOR_RGBA2BGR)
+        scr_capture = cv2.cvtColor(scr_capture, cv2.COLOR_RGBA2RGB)
         
         
     return scr_capture
@@ -408,8 +377,9 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
     total_shape = (1900, 1000)
     plot_height = 500
     fig_width = 640 # 640  -> total 1280 x 960. (com = 1920 x 1080)
+    
     plot_width = 1480
-    plot_1_width = int(plot_width*7/10)
+    plot_1_width = int(plot_width*1/2)
     fig_1_shape = (plot_1_width, plot_height) 
     fig_2_shape = (plot_width-plot_1_width, plot_height)
     n_label = len(labels)
@@ -425,13 +395,15 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
      ### 0. Initialization
         #### plot figure
     plot_fig = fig2data(fig_total)
-    plot_fig = cv2.resize(plot_fig, (fig_width*2,plot_height))
+    plot_fig = cv2.resize(plot_fig, (plot_width,plot_height))
     plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGBA2BGR)
-    plot_fig_1 = plot_fig[:,:640,:]
-    plot_fig_2 = plot_fig[:,640:,:]
-    plot_fig_1 = cv2.resize(plot_fig_1, fig_1_shape)
-    plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
-    plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
+#    plot_fig = cv2.resize(plot_fig, (fig_width*2,plot_height))
+#    plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGBA2BGR)
+#    plot_fig_1 = plot_fig[:,:640,:]
+#    plot_fig_2 = plot_fig[:,640:,:]
+#    plot_fig_1 = cv2.resize(plot_fig_1, fig_1_shape)
+#    plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
+#    plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
     
     ## data initialization
     emotion_array = np.zeros((n_label,1)) # emotion array initialization
@@ -524,7 +496,7 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 for i in range(n_label):
                     list_line[i].set_data(xdata, cur_emotion_array[i,:]) ## temp
                     
-                axes_list[0].set_xlim((0, n_emotion))
+                axes_list[idx_line].set_xlim((0, n_emotion))
                 
                 
                 
@@ -549,14 +521,14 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
                 
                 ### graph 
                 plot_fig = fig2data(fig_total)
-                plot_fig = cv2.resize(plot_fig, (fig_width*2,plot_height))
+                plot_fig = cv2.resize(plot_fig, (plot_width,plot_height))
                 plot_fig = cv2.cvtColor(plot_fig, cv2.COLOR_RGBA2BGR)
                 
-                plot_fig_1 = plot_fig[:,:640,:]
-                plot_fig_2 = plot_fig[:,640:,:]
-                plot_fig_1 = cv2.resize(plot_fig_1, fig_1_shape)
-                plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
-                plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
+#                plot_fig_1 = plot_fig[:,:640,:]
+#                plot_fig_2 = plot_fig[:,640:,:]
+#                plot_fig_1 = cv2.resize(plot_fig_1, fig_1_shape)
+#                plot_fig_2 = cv2.resize(plot_fig_2, fig_2_shape)
+#                plot_fig = np.concatenate((plot_fig_1,plot_fig_2), axis=1)
                 #print('fig:',np.shape(plot_fig))
         
         ##########################################################
@@ -564,9 +536,9 @@ def showScreenAndDetectFace(capture, color_ch=1):  #jj_add / for different emoti
         refreshScreen(frame) # draw flandmark 
         
         #### final concat
-        #print(np.shape(frame), np.shape(scr_capture), np.shape(plot_fig))
+        print(np.shape(frame), np.shape(scr_capture), np.shape(plot_fig))
         frame_concat = np.concatenate((frame, scr_capture), axis=1)
-        #print(np.shape(frame_concat))
+        print(np.shape(frame_concat))
         frame_concat = np.concatenate((frame_concat, plot_fig), axis=0)
         frame_concat = cv2.resize(frame_concat, total_shape)
 
